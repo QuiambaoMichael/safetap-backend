@@ -100,12 +100,13 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/submit-clinic', async (req, res) => {
   const { email, fullname, concern, otherConcern, location } = req.body;
 
+  // Check if all required fields are provided
   if (!email || !fullname || !concern || !location) {
     return res.status(400).json({ success: false, message: "Missing required fields" });
   }
 
   try {
-    // Optionally, check if the user exists in the database to verify the email
+    // Check if the user exists
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
@@ -122,7 +123,12 @@ app.post('/api/submit-clinic', async (req, res) => {
 
     await newConcern.save();
 
-    return res.status(200).json({ success: true, message: "Concern submitted successfully" });
+    // Respond with success and include the newly created concern
+    return res.status(201).json({
+      success: true,
+      message: "Concern submitted successfully",
+      concern: newConcern
+    });
 
   } catch (err) {
     console.error("Error submitting concern:", err);
