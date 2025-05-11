@@ -73,7 +73,13 @@ app.post('/api/login', async (req, res) => {
       return res.status(401).json({ success: false, message: "Invalid email or password" });
     }
 
-    return res.status(200).json({ success: true, message: "Login successful", role: user.role });
+    // Include fullname in the response
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+      role: user.role,
+      fullname: user.fullname  // Sending fullname
+    });
 
   } catch (err) {
     console.error("Login error:", err);
@@ -99,7 +105,7 @@ app.post('/api/submit-concern', async (req, res) => {
       concernType,
       concern,
       otherConcern,
-      location,
+      location, 
       email,
       name
     });
