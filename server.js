@@ -3,14 +3,14 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const User = require('./models/User'); // Ensure your User model includes fullname and phone
+const User = require('./models/User');
+const Concern = require('./models/Concern'); // Updated import
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
@@ -21,18 +21,6 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => console.log("MongoDB connected"))
   .catch(err => console.error("MongoDB error:", err));
 
-// Clinic Concern Schema and Model
-const clinicConcernSchema = new mongoose.Schema({
-  email: { type: String, required: true },
-  fullname: { type: String, required: true },
-  concern: { type: String, required: true },
-  otherConcern: { type: String, default: '' },
-  location: { type: String, required: true },
-  timestamp: { type: Date, default: Date.now }
-});
-
-const ClinicConcern = mongoose.model('ClinicConcern', clinicConcernSchema);
-
 // Sign-up route
 app.post('/api/signup', async (req, res) => {
   const { fullname, phone, email, password, role } = req.body;
@@ -42,16 +30,13 @@ app.post('/api/signup', async (req, res) => {
   }
 
   try {
-    // Check if email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(409).json({ success: false, message: "Email already exists" });
     }
 
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create and save user
     const newUser = new User({
       fullname,
       phone,
@@ -96,34 +81,31 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Route to submit clinic concerns
-app.post('/api/submit-clinic', async (req, res) => {
-  const { email, fullname, concern, otherConcern, location } = req.body;
+// Route to submit a concern
+app.post('/api/submit-concern', async (req, res) => {
+  const { concernType, concern, otherConcern, location, email, name } = req.body;
 
-  // Check if all required fields are provided
-  if (!email || !fullname || !concern || !location) {
+  if (!concernType || !concern || !location || !email || !name) {
     return res.status(400).json({ success: false, message: "Missing required fields" });
   }
 
   try {
-    // Check if the user exists
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email, fullname: name });
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Save the clinic concern in the database
-    const newConcern = new concerns({
-      email,
-      fullname,
+    const newConcern = new Concern({
+      concernType,
       concern,
       otherConcern,
-      location
+      location,
+      email,
+      name
     });
 
     await newConcern.save();
 
-    // Respond with success and include the newly created concern
     return res.status(201).json({
       success: true,
       message: "Concern submitted successfully",
@@ -136,5 +118,4 @@ app.post('/api/submit-clinic', async (req, res) => {
   }
 });
 
-// Start server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
