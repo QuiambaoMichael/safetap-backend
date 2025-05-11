@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
-const User = require('./models/User'); // Create a User model
+const User = require('./models/User'); // Import User model
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
@@ -18,15 +18,6 @@ mongoose.connect(process.env.MONGO_URI, {
   useUnifiedTopology: true
 }).then(() => console.log("MongoDB connected"))
   .catch(err => console.error("MongoDB error:", err));
-
-// User model (schema)
-const userSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  role: { type: String, required: true }
-});
-
-const User = mongoose.model('User', userSchema);
 
 // Sign-up route
 app.post('/api/signup', async (req, res) => {
