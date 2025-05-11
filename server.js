@@ -21,6 +21,18 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => console.log("MongoDB connected"))
   .catch(err => console.error("MongoDB error:", err));
 
+// Clinic Concern Schema and Model
+const clinicConcernSchema = new mongoose.Schema({
+  email: { type: String, required: true },
+  fullname: { type: String, required: true },
+  concern: { type: String, required: true },
+  otherConcern: { type: String, default: '' },
+  location: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now }
+});
+
+const ClinicConcern = mongoose.model('ClinicConcern', clinicConcernSchema);
+
 // Sign-up route
 app.post('/api/signup', async (req, res) => {
   const { fullname, phone, email, password, role } = req.body;
@@ -80,6 +92,40 @@ app.post('/api/login', async (req, res) => {
 
   } catch (err) {
     console.error("Login error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// Route to submit clinic concerns
+app.post('/api/submit-clinic', async (req, res) => {
+  const { email, fullname, concern, otherConcern, location } = req.body;
+
+  if (!email || !fullname || !concern || !location) {
+    return res.status(400).json({ success: false, message: "Missing required fields" });
+  }
+
+  try {
+    // Optionally, check if the user exists in the database to verify the email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Save the clinic concern in the database
+    const newConcern = new ClinicConcern({
+      email,
+      fullname,
+      concern,
+      otherConcern,
+      location
+    });
+
+    await newConcern.save();
+
+    return res.status(200).json({ success: true, message: "Concern submitted successfully" });
+
+  } catch (err) {
+    console.error("Error submitting concern:", err);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 });
