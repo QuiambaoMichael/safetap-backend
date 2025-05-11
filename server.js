@@ -73,13 +73,7 @@ app.post('/api/login', async (req, res) => {
       return res.status(401).json({ success: false, message: "Invalid email or password" });
     }
 
-    // Include fullname in the response
-    return res.status(200).json({
-      success: true,
-      message: "Login successful",
-      role: user.role,
-      fullname: user.fullname  // Sending fullname
-    });
+    return res.status(200).json({ success: true, message: "Login successful", role: user.role });
 
   } catch (err) {
     console.error("Login error:", err);
