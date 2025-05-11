@@ -113,7 +113,7 @@ app.post('/api/submit-clinic', async (req, res) => {
     }
 
     // Save the clinic concern in the database
-    const newConcern = new ClinicConcern({
+    const newConcern = new concerns({
       email,
       fullname,
       concern,
