@@ -10,18 +10,19 @@ const concernSchema = new mongoose.Schema({
   name: { type: String, required: true }
 }, { timestamps: true });
 
-// Helper function to format date
+// Helper to format date as "June 6, 2025 10:15 PM"
 function formatDate(date) {
-  const d = new Date(date);
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const yyyy = d.getFullYear();
-  const hh = String(d.getHours()).padStart(2, '0');
-  const min = String(d.getMinutes()).padStart(2, '0');
-  return `${mm}/${dd}/${yyyy} : ${hh}:${min}`;
+  return new Date(date).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
 }
 
-// Modify how documents are serialized to JSON
+// Format JSON output
 concernSchema.set('toJSON', {
   transform: (doc, ret) => {
     ret.createdAt = formatDate(ret.createdAt);
