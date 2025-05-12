@@ -145,18 +145,40 @@ app.post('/api/submit-concern', async (req, res) => {
 });
 
 // Route to fetch concerns with a specific status
+// Route to fetch concerns with optional filters
 app.get('/api/concerns', async (req, res) => {
-  const { status } = req.query;
+  const { status, concernType, time } = req.query;
 
   try {
-    const query = status ? { status } : {};
+    const query = {};
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (concernType) {
+      query.concernType = concernType;
+    }
+
+    if (time) {
+      const today = new Date().toLocaleDateString('en-US', {
+        timeZone: 'Asia/Manila',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      query.createdAt = { $regex: `^${today}` }; // Matches today's date
+    }
+
     const concerns = await Concern.find(query).lean();
 
     const formattedConcerns = concerns.map(c => ({
-      concernId: c._id,
+      concernId: c.id || c._id,
       concernType: c.concernType,
       location: c.location,
-      status: c.status
+      status: c.status,
+      createdAt: c.createdAt
     }));
 
     return res.status(200).json({
