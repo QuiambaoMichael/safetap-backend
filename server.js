@@ -205,14 +205,12 @@ app.put('/api/resolve-concern', async (req, res) => {
   }
 });
 
-
-// Route to fetch a specific concern by its concernId (UUID)
 app.get('/api/concern/:concernId', async (req, res) => {
-  const { concernId } = req.params; // Extract concernId from URL
+  const { concernId } = req.params;  // Extract concernId from URL
 
   try {
-    // Query using the 'id' field instead of '_id'
-    const concern = await Concern.findOne({ id: concernId }).lean(); 
+    // Convert concernId from string to ObjectId to query the database
+    const concern = await Concern.findById(concernId).lean();
 
     if (!concern) {
       return res.status(404).json({ success: false, message: "Concern not found" });
@@ -222,7 +220,7 @@ app.get('/api/concern/:concernId', async (req, res) => {
     return res.status(200).json({
       success: true,
       concern: {
-        concernId: concern.id,
+        concernId: concern._id,  // MongoDB's default _id
         concernType: concern.concernType,
         concern: concern.concern,
         otherConcern: concern.otherConcern,
