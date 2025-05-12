@@ -1,4 +1,5 @@
 require('dotenv').config();
+
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
@@ -7,18 +8,19 @@ const Concern = require('./models/Concern');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
-const http = require('http');
-const socketIo = require('socket.io');
+const http = require('http');  // Import http module
+const socketIo = require('socket.io');  // Import socket.io
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
 
-// Create HTTP server for socket.io
+// Create HTTP server to enable Socket.IO
 const server = http.createServer(app);
 
-// Initialize Socket.io
+// Initialize Socket.IO
 const io = socketIo(server);
 
 // MongoDB connection
@@ -27,15 +29,6 @@ mongoose.connect(process.env.MONGO_URI, {
   useUnifiedTopology: true
 }).then(() => console.log("MongoDB connected"))
   .catch(err => console.error("MongoDB error:", err));
-
-// Set up MongoDB Change Streams to watch the concerns collection
-const changeStream = Concern.watch();
-changeStream.on('change', (change) => {
-  if (change.operationType === 'insert') {
-    // Emit the new concern to all connected clients
-    io.emit('new-concern', change.fullDocument);
-  }
-});
 
 // Sign-up route
 app.post('/api/signup', async (req, res) => {
@@ -89,11 +82,12 @@ app.post('/api/login', async (req, res) => {
       return res.status(401).json({ success: false, message: "Invalid email or password" });
     }
 
+    // Include fullname in the response
     return res.status(200).json({
       success: true,
       message: "Login successful",
       role: user.role,
-      fullname: user.fullname
+      fullname: user.fullname  // Sending fullname
     });
 
   } catch (err) {
@@ -117,7 +111,7 @@ app.post('/api/submit-concern', async (req, res) => {
     }
 
     const now = new Date();
-    const formattedDate = new Intl.DateTimeFormat('en-US', {
+    const options = {
       timeZone: 'Asia/Manila',
       year: 'numeric',
       month: 'long',
@@ -125,10 +119,15 @@ app.post('/api/submit-concern', async (req, res) => {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true
-    }).format(now);
+    };
+
+    const formattedDate = new Intl.DateTimeFormat('en-US', options).format(now);
+
+    // Generate a unique id using UUID
+    const newConcernId = uuidv4(); // Generate a unique ID
 
     const newConcern = new Concern({
-      id: uuidv4(), // Generate a unique ID
+      id: newConcernId, // Add the custom id field
       concernType,
       concern,
       otherConcern,
@@ -137,13 +136,13 @@ app.post('/api/submit-concern', async (req, res) => {
       name,
       createdAt: formattedDate,
       updatedAt: formattedDate,
-      status: 'unresolved'
+      status: 'unresolved' // Default status is unresolved
     });
 
     await newConcern.save();
 
-    // Emit the new concern to connected clients via Socket.io
-    io.emit('new-concern', newConcern);  // Broadcast new concern to all clients
+    // Emit the new concern to all connected clients via Socket.IO
+    io.emit('new-concern', newConcern);
 
     return res.status(201).json({
       success: true,
@@ -190,9 +189,17 @@ app.get('/api/concerns', async (req, res) => {
       .sort({ createdAt: sortOption })
       .lean();
 
+    const formattedConcerns = concerns.map(c => ({
+      concernId: c._id.toString(), // Use default ObjectId
+      concernType: c.concernType,
+      location: c.location,
+      status: c.status,
+      createdAt: c.createdAt
+    }));
+
     return res.status(200).json({
       success: true,
-      concerns
+      concerns: formattedConcerns
     });
   } catch (err) {
     console.error("Error fetching concerns:", err);
@@ -219,14 +226,49 @@ app.put('/api/resolve-concern', async (req, res) => {
 
     await concern.save();
 
+    // Emit the updated concern to all connected clients
+    io.emit('resolved-concern', concern);
+
     return res.status(200).json({
       success: true,
       message: "Concern marked as resolved",
-      concern
+      concern: concern
     });
 
   } catch (err) {
     console.error("Error resolving concern:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// Route to fetch a specific concern by ID
+app.get('/api/concern/:concernId', async (req, res) => {
+  const { concernId } = req.params;  // Extract concernId from URL
+
+  try {
+    const concern = await Concern.findById(concernId).lean();
+
+    if (!concern) {
+      return res.status(404).json({ success: false, message: "Concern not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      concern: {
+        concernId: concern._id,  // MongoDB's default _id
+        concernType: concern.concernType,
+        concern: concern.concern,
+        otherConcern: concern.otherConcern,
+        location: concern.location,
+        email: concern.email,
+        name: concern.name,
+        createdAt: concern.createdAt,
+        updatedAt: concern.updatedAt,
+        status: concern.status
+      }
+    });
+  } catch (err) {
+    console.error("Error fetching concern by ID:", err);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 });
