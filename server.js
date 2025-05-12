@@ -122,7 +122,8 @@ app.post('/api/submit-concern', async (req, res) => {
       email,
       name,
       createdAt: formattedDate,
-      updatedAt: formattedDate
+      updatedAt: formattedDate,
+      status: 'unresolved' // Default status is unresolved
     });
 
     await newConcern.save();
@@ -135,6 +136,55 @@ app.post('/api/submit-concern', async (req, res) => {
 
   } catch (err) {
     console.error("Error submitting concern:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// Route to fetch concerns with a specific status
+app.get('/api/concerns', async (req, res) => {
+  const { status } = req.query;  // Get the status filter from query parameter
+
+  try {
+    const query = status ? { status } : {}; // If status is provided, filter by it
+    const concerns = await Concern.find(query);
+
+    return res.status(200).json({
+      success: true,
+      concerns
+    });
+  } catch (err) {
+    console.error("Error fetching concerns:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// Route to mark a concern as resolved
+app.put('/api/resolve-concern', async (req, res) => {
+  const { concernId } = req.body;
+
+  if (!concernId) {
+    return res.status(400).json({ success: false, message: "Concern ID is required" });
+  }
+
+  try {
+    const concern = await Concern.findById(concernId);
+    if (!concern) {
+      return res.status(404).json({ success: false, message: "Concern not found" });
+    }
+
+    concern.status = 'resolved';  // Mark as resolved
+    concern.updatedAt = new Date().toISOString();  // Update the timestamp
+
+    await concern.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Concern marked as resolved",
+      concern: concern
+    });
+
+  } catch (err) {
+    console.error("Error resolving concern:", err);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 });
