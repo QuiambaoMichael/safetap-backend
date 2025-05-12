@@ -7,7 +7,7 @@ const User = require('./models/User');
 const Concern = require('./models/Concern'); // Updated import
 const bodyParser = require('body-parser');
 const cors = require('cors');
-
+const { v4: uuidv4 } = require('uuid'); 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -114,7 +114,11 @@ app.post('/api/submit-concern', async (req, res) => {
 
     const formattedDate = new Intl.DateTimeFormat('en-US', options).format(now);
 
+    // Generate a unique id using UUID
+    const newConcernId = uuidv4(); // Generate a unique ID
+
     const newConcern = new Concern({
+      id: newConcernId, // Add the custom id field
       concernType,
       concern,
       otherConcern,
@@ -183,7 +187,7 @@ app.put('/api/resolve-concern', async (req, res) => {
       concern: concern
     });
 
-  } catch (err) {
+  } catch (err) { 
     console.error("Error resolving concern:", err);
     return res.status(500).json({ success: false, message: "Server error" });
   }
