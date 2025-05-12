@@ -146,21 +146,30 @@ app.post('/api/submit-concern', async (req, res) => {
 
 // Route to fetch concerns with a specific status
 app.get('/api/concerns', async (req, res) => {
-  const { status } = req.query;  // Get the status filter from query parameter
+  const { status } = req.query;
 
   try {
-    const query = status ? { status } : {}; // If status is provided, filter by it
-    const concerns = await Concern.find(query);
+    const query = status ? { status } : {};
+    const concerns = await Concern.find(query).lean();
+
+    // Rename _id to concernId
+    const formattedConcerns = concerns.map(c => ({
+      concernId: c._id,
+      concernType: c.concernType,
+      location: c.location,
+      status: c.status
+    }));
 
     return res.status(200).json({
       success: true,
-      concerns
+      concerns: formattedConcerns
     });
   } catch (err) {
     console.error("Error fetching concerns:", err);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 
 // Route to mark a concern as resolved
 app.put('/api/resolve-concern', async (req, res) => {
