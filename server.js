@@ -205,11 +205,14 @@ app.put('/api/resolve-concern', async (req, res) => {
   }
 });
 
+// Route to fetch a specific concern by its concernId (UUID)
 app.get('/api/concern/:concernId', async (req, res) => {
   const { concernId } = req.params; // Extract concernId from URL
 
   try {
-    const concern = await Concern.findOne({ id: concernId }).lean(); // Query by id field
+    // Query using the 'id' field instead of '_id'
+    const concern = await Concern.findOne({ id: concernId }).lean(); 
+
     if (!concern) {
       return res.status(404).json({ success: false, message: "Concern not found" });
     }
@@ -235,5 +238,6 @@ app.get('/api/concern/:concernId', async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
