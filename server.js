@@ -145,9 +145,8 @@ app.post('/api/submit-concern', async (req, res) => {
 });
 
 // Route to fetch concerns with a specific status
-// Route to fetch concerns with optional filters
 app.get('/api/concerns', async (req, res) => {
-  const { status, concernType, time } = req.query;
+  const { status, concernType, sort, fromDate, toDate } = req.query;
 
   try {
     const query = {};
@@ -160,21 +159,27 @@ app.get('/api/concerns', async (req, res) => {
       query.concernType = concernType;
     }
 
-    if (time) {
-      const today = new Date().toLocaleDateString('en-US', {
-        timeZone: 'Asia/Manila',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-
-      query.createdAt = { $regex: `^${today}` }; // Matches today's date
+    if (fromDate || toDate) {
+      query.createdAt = {};
+      if (fromDate) {
+        query.createdAt.$gte = new Date(fromDate);
+      }
+      if (toDate) {
+        // Add 1 day to include the entire toDate day
+        const end = new Date(toDate);
+        end.setDate(end.getDate() + 1);
+        query.createdAt.$lt = end;
+      }
     }
 
-    const concerns = await Concern.find(query).lean();
+    const sortOption = sort === 'asc' ? 1 : -1;
+
+    const concerns = await Concern.find(query)
+      .sort({ createdAt: sortOption })
+      .lean();
 
     const formattedConcerns = concerns.map(c => ({
-      concernId: c.id || c._id,
+      concernId: c._id.toString(), // Use default ObjectId
       concernType: c.concernType,
       location: c.location,
       status: c.status,
