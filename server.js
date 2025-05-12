@@ -152,7 +152,6 @@ app.get('/api/concerns', async (req, res) => {
     const query = status ? { status } : {};
     const concerns = await Concern.find(query).lean();
 
-    // Rename _id to concernId
     const formattedConcerns = concerns.map(c => ({
       concernId: c._id,
       concernType: c.concernType,
@@ -180,6 +179,8 @@ app.put('/api/resolve-concern', async (req, res) => {
   }
 
   try {
+    console.log(`Attempting to resolve concern with ID: ${concernId}`); // Add logging for debugging
+
     const concern = await Concern.findById(concernId);
     if (!concern) {
       return res.status(404).json({ success: false, message: "Concern not found" });
@@ -190,14 +191,47 @@ app.put('/api/resolve-concern', async (req, res) => {
 
     await concern.save();
 
+    console.log(`Concern ${concernId} marked as resolved`); // Log after update
+
     return res.status(200).json({
       success: true,
       message: "Concern marked as resolved",
       concern: concern
     });
 
-  } catch (err) { 
+  } catch (err) {
     console.error("Error resolving concern:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+app.get('/api/concern/:concernId', async (req, res) => {
+  const { concernId } = req.params; // Extract concernId from URL
+
+  try {
+    const concern = await Concern.findOne({ id: concernId }).lean(); // Query by id field
+    if (!concern) {
+      return res.status(404).json({ success: false, message: "Concern not found" });
+    }
+
+    // Return the concern details
+    return res.status(200).json({
+      success: true,
+      concern: {
+        concernId: concern.id,
+        concernType: concern.concernType,
+        concern: concern.concern,
+        otherConcern: concern.otherConcern,
+        location: concern.location,
+        email: concern.email,
+        name: concern.name,
+        createdAt: concern.createdAt,
+        updatedAt: concern.updatedAt,
+        status: concern.status
+      }
+    });
+  } catch (err) {
+    console.error("Error fetching concern by ID:", err);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 });
