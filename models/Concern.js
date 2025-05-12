@@ -7,29 +7,9 @@ const concernSchema = new mongoose.Schema({
   otherConcern: { type: String, default: '' },
   location: { type: String, required: true },
   email: { type: String, required: true },
-  name: { type: String, required: true }
-}, { timestamps: true });
-
-// Format function with Manila timezone
-function formatDateToManila(date) {
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Manila',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  }).format(new Date(date));
-}
-
-// Customize the output of JSON
-concernSchema.set('toJSON', {
-  transform: (doc, ret) => {
-    ret.createdAt = formatDateToManila(ret.createdAt);
-    ret.updatedAt = formatDateToManila(ret.updatedAt);
-    return ret;
-  }
+  name: { type: String, required: true },
+  createdAt: { type: String },
+  updatedAt: { type: String }
 });
 
 const Concern = mongoose.model('Concern', concernSchema);

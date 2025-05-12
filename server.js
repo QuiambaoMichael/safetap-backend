@@ -101,13 +101,28 @@ app.post('/api/submit-concern', async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
+    const now = new Date();
+    const options = {
+      timeZone: 'Asia/Manila',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    };
+
+    const formattedDate = new Intl.DateTimeFormat('en-US', options).format(now);
+
     const newConcern = new Concern({
       concernType,
       concern,
       otherConcern,
-      location, 
+      location,
       email,
-      name
+      name,
+      createdAt: formattedDate,
+      updatedAt: formattedDate
     });
 
     await newConcern.save();
