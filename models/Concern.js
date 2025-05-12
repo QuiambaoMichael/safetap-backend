@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-// Define the schema
+// Define schema
 const concernSchema = new mongoose.Schema({
   concernType: { type: String, required: true },
   concern: { type: String, required: true },
@@ -10,23 +10,24 @@ const concernSchema = new mongoose.Schema({
   name: { type: String, required: true }
 }, { timestamps: true });
 
-// Helper to format date as "June 6, 2025 10:15 PM"
-function formatDate(date) {
-  return new Date(date).toLocaleString('en-US', {
+// Format function with Manila timezone
+function formatDateToManila(date) {
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Manila',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
     hour12: true
-  });
+  }).format(new Date(date));
 }
 
-// Format JSON output
+// Customize the output of JSON
 concernSchema.set('toJSON', {
   transform: (doc, ret) => {
-    ret.createdAt = formatDate(ret.createdAt);
-    ret.updatedAt = formatDate(ret.updatedAt);
+    ret.createdAt = formatDateToManila(ret.createdAt);
+    ret.updatedAt = formatDateToManila(ret.updatedAt);
     return ret;
   }
 });
