@@ -206,6 +206,7 @@ app.put('/api/resolve-concern', async (req, res) => {
 });
 
 // Route to fetch a specific concern by its concernId (UUID)
+// Route to fetch a specific concern by its concernId (UUID)
 app.get('/api/concern/:concernId', async (req, res) => {
   const { concernId } = req.params; // Extract concernId from URL
 
@@ -238,6 +239,7 @@ app.get('/api/concern/:concernId', async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
